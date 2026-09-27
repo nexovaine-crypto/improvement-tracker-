@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#243b6b">
+<title>Improvement Tracker</title>
+<style>
+:root{--navy:#20345f;--blue:#4b6cb7;--bg:#f4f6fb;--ink:#172033;--muted:#68748a;--line:#e1e6ef;--green:#147d50;--red:#b42318}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif}
+header{padding:27px 18px 24px;background:linear-gradient(135deg,#182848,#4b6cb7);color:#fff;border-radius:0 0 24px 24px}
+header h1{font-size:27px;margin:0}header p{margin:6px 0 0;opacity:.88}
+nav{position:sticky;top:0;z-index:5;display:flex;gap:7px;overflow-x:auto;padding:11px;background:#fff;box-shadow:0 2px 12px #15213a12}
+nav button{white-space:nowrap;border:0;border-radius:11px;padding:11px 13px;background:#eef2f8;color:#26334d;font-weight:750}
+nav button.active{background:var(--navy);color:white}
+main{max-width:900px;margin:auto;padding:14px}
+.page{display:none}.page.active{display:block}
+.card{background:white;border-radius:17px;padding:17px;margin:12px 0;box-shadow:0 4px 18px #1828480c}
+h2{font-size:20px;margin:0 0 13px}h3{margin:0;font-size:17px}
+.muted{color:var(--muted);line-height:1.5}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px}
+label{display:block;font-size:13px;font-weight:750;color:#59657b;margin:0 0 6px}
+input,select{width:100%;padding:12px;border:1px solid #d6ddea;border-radius:11px;background:#fff;color:var(--ink);font:inherit}
+button{cursor:pointer}
+.primary{width:100%;border:0;border-radius:12px;padding:13px;background:var(--navy);color:white;font-size:15px;font-weight:800;margin-top:13px}
+.secondary{border:0;border-radius:10px;padding:9px 11px;background:#eef2f8;color:var(--navy);font-weight:750}
+.delete{border:0;border-radius:9px;padding:8px 10px;background:#fff0ef;color:var(--red);font-weight:750}
+.subject{border:1px solid var(--line);border-radius:14px;padding:14px;margin:10px 0}
+.subject-head{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.badge{display:inline-block;background:#eef2ff;color:#304779;border-radius:99px;padding:5px 9px;font-size:12px;font-weight:800;margin:8px 5px 0 0}
+.progress{height:9px;background:#e8ecf3;border-radius:99px;overflow:hidden;margin:11px 0}
+.bar{height:100%;background:linear-gradient(90deg,#4b6cb7,#6d8fe0);border-radius:99px}
+.stats{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:10px}
+.stat{background:#f5f7fb;border-radius:11px;padding:10px;min-width:0}
+.stat small{display:block;color:var(--muted);font-size:12px}.stat b{display:block;margin-top:3px;font-size:16px;overflow-wrap:anywhere}
+.empty{text-align:center;padding:24px 8px;color:var(--muted)}
+.countdown{text-align:center;font-size:34px;font-weight:900;margin:15px 0 2px}
+.notice{font-size:13px;color:var(--muted);margin-top:9px}
+.error{color:var(--red);font-weight:700;font-size:13px}
+footer{text-align:center;color:#8791a3;padding:24px 10px;font-size:12px}
+@media(min-width:600px){.stats{grid-template-columns:repeat(3,minmax(0,1fr))}}
+</style>
+</head>
+<body>
+<header>
+  <h1>📚 Improvement Tracker</h1>
+  <p>Small steps. Clear progress. Keep going.</p>
+</header>
+<nav aria-label="Main navigation">
+  <button class="tab active" data-page="home">🏠 Home</button>
+  <button class="tab" data-page="add">➕ Add Subject</button>
+  <button class="tab" data-page="progress">📊 Progress</button>
+  <button class="tab" data-page="countdown">📅 Countdown</button>
+</nav>
+<main>
+<section id="home" class="page active">
+  <div class="card">
+    <h2>Welcome 👋</h2>
+    <p class="muted">Add any subjects, set your targets, and let the tracker calculate your progress.</p>
+    <button class="primary" onclick="showPage('add')">＋ Add a Subject</button>
+  </div>
+  <div class="card"><h2>Your Subjects</h2><div id="homeSubjects"></div></div>
+</section>
+<section id="add" class="page">
+  <div class="card">
+    <h2 id="formTitle">➕ Add Subject</h2>
+    <form id="subjectForm">
+      <div class="grid">
+        <div><label for="name">Subject name</label><input id="name" maxlength="60" placeholder="e.g. Physics" required></div>
+        <div><label for="max">Maximum marks</label><select id="max"><option value="60">60 marks</option><option value="80">80 marks</option></select></div>
+        <div><label for="current">Current marks</label><input id="current" type="number" min="0" max="60" step="any" placeholder="e.g. 12" required></div>
+        <div><label for="target">Target marks</label><input id="target" type="number" min="0" max="60" step="any" placeholder="e.g. 40" required></div>
+      </div>
+      <p id="error" class="error" role="alert"></p>
+      <button class="primary" id="saveButton" type="submit">Add Subject</button>
+      <button class="secondary" id="cancelEdit" type="button" style="display:none;margin-top:10px" onclick="resetForm()">Cancel edit</button>
+    </form>
+    <p class="notice">Pass marks: 18/60 or 24/80. Double-pass marks: 36/60 or 48/80.</p>
+  </div>
+</section>
+<section id="progress" class="page">
+  <div class="card"><h2>📊 Overall Progress</h2><div id="summary"></div></div>
+  <div class="card"><h2>All Subjects</h2><div id="subjects"></div></div>
+</section>
+<section id="countdown" class="page">
+  <div class="card">
+    <h2>📅 Exam Countdown</h2>
+    <label for="examDate">Choose your exam date</label>
+    <input id="examDate" type="date">
+    <div class="countdown" id="timer">—</div>
+    <p class="muted" id="timerLabel" style="text-align:center">Choose a date to start the countdown.</p>
+  </div>
+</section>
+</main>
+<footer>Your subjects and exam date are saved in this browser on this device.</footer>
+<script>
+const STORAGE_KEY='improvementTracker_v1';
+let subjects=[];
+let editingId=null;
+try{subjects=JSON.parse(localStorage.getItem(STORAGE_KEY)||'[]');if(!Array.isArray(subjects))subjects=[]}catch(e){subjects=[]}
+function showPage(id){
+  document.querySelectorAll('.page').forEach(p=>p.classList.toggle('active',p.id===id));
+  document.querySelectorAll('.tab').forEach(b=>b.classList.toggle('active',b.dataset.page===id));
+  render();
+}
+document.querySelectorAll('.tab').forEach(b=>b.addEventListener('click',()=>showPage(b.dataset.page)));
+function passMark(max){return max===60?18:24}
+function doublePass(max){return max===60?36:48}
+function grade(mark,max){
+  const p=mark/max*100;
+  if(p>=90)return ['A+',9];if(p>=80)return ['A',8];if(p>=70)return ['B+',7];
+  if(p>=60)return ['B',6];if(p>=50)return ['C+',5];if(p>=40)return ['C',4];
+  if(p>=30)return ['D+',3];if(p>=20)return ['D',2];return ['E',1];
+}
+function save(){try{localStorage.setItem(STORAGE_KEY,JSON.stringify(subjects))}catch(e){alert('Could not save data in this browser.')}render()}
+function resetForm(){
+  editingId=null;document.getElementById('subjectForm').reset();
+  document.getElementById('formTitle').textContent='➕ Add Subject';
+  document.getElementById('saveButton').textContent='Add Subject';
+  document.getElementById('cancelEdit').style.display='none';
+  document.getElementById('error').textContent='';
+  updateMarkLimits();
+}
+function updateMarkLimits(){
+  const max=+document.getElementById('max').value;
+  ['current','target'].forEach(id=>{document.getElementById(id).max=max});
+}
+document.getElementById('max').addEventListener('change',updateMarkLimits);
+document.getElementById('subjectForm').addEventListener('submit',e=>{
+  e.preventDefault();
+  const name=document.getElementById('name').value.trim(),max=+document.getElementById('max').value;
+  const current=Number(document.getElementById('current').value),target=Number(document.getElementById('target').value);
+  const err=document.getElementById('error');
+  if(!name){err.textContent='Enter a subject name.';return}
+  if(!Number.isFinite(current)||!Number.isFinite(target)||current<0||target<0||current>max||target>max){err.textContent=`Marks must be between 0 and ${max}.`;return}
+  const item={id:editingId??(Date.now()+Math.random()),name,max,current,target};
+  if(editingId!==null){subjects=subjects.map(s=>s.id===editingId?item:s)}else subjects.push(item);
+  save();resetForm();showPage('progress');
+});
+function editSubject(id){
+  const s=subjects.find(x=>x.id===id);if(!s)return;
+  editingId=id;showPage('add');
+  document.getElementById('name').value=s.name;document.getElementById('max').value=s.max;
+  updateMarkLimits();document.getElementById('current').value=s.current;document.getElementById('target').value=s.target;
+  document.getElementById('formTitle').textContent='✏️ Edit Subject';
+  document.getElementById('saveButton').textContent='Save Changes';
+  document.getElementById('cancelEdit').style.display='inline-block';
+}
+function deleteSubject(id){
+  if(!confirm('Delete this subject?'))return;
+  subjects=subjects.filter(s=>s.id!==id);save();
+}
+function esc(value){return String(value).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function subjectHTML(s){
+  const pass=passMark(s.max),dbl=doublePass(s.max),g=grade(s.current,s.max);
+  const pct=Math.round(s.current/s.max*100),needPass=Math.max(0,pass-s.current);
+  const needDouble=Math.max(0,dbl-s.current),needTarget=Math.max(0,s.target-s.current);
+  return `<article class="subject">
+    <div class="subject-head"><h3>${esc(s.name)}</h3><button class="delete" onclick="deleteSubject(${JSON.stringify(s.id)})">Delete</button></div>
+    <span class="badge">${s.current}/${s.max} marks</span><span class="badge">Grade ${g[0]} · ${g[1]} points</span>
+    <div class="progress"><div class="bar" style="width:${pct}%"></div></div>
+    <div class="stats">
+      <div class="stat"><small>Current percentage</small><b>${pct}%</b></div>
+      <div class="stat"><small>Pass mark</small><b>${pass}</b></div>
+      <div class="stat"><small>Double-pass mark</small><b>${dbl}</b></div>
+      <div class="stat"><small>Pass status</small><b>${s.current>=pass?'✅ Passed':`🔴 ${fmt(needPass)} needed`}</b></div>
+      <div class="stat"><small>Double-pass status</small><b>${s.current>=dbl?'✅ Achieved':`${fmt(needDouble)} needed`}</b></div>
+      <div class="stat"><small>Target: ${s.target}</small><b>${needTarget===0?'🎯 Target reached':`${fmt(needTarget)} needed`}</b></div>
+    </div>
+    <button class="secondary" style="margin-top:11px" onclick="editSubject(${JSON.stringify(s.id)})">✏️ Edit marks / target</button>
+  </article>`;
+}
+function fmt(n){return Number.isInteger(n)?String(n):n.toFixed(1)}
+function render(){
+  const list=subjects.length?subjects.map(subjectHTML).join(''):'<div class="empty">No subjects yet. Tap “Add Subject” to begin.</div>';
+  document.getElementById('subjects').innerHTML=list;
+  document.getElementById('homeSubjects').innerHTML=list;
+  const max=subjects.reduce((a,s)=>a+s.max,0),current=subjects.reduce((a,s)=>a+s.current,0),target=subjects.reduce((a,s)=>a+s.target,0);
+  const pct=max?Math.round(current/max*100):0;
+  document.getElementById('summary').innerHTML=subjects.length?`
+    <div class="stats">
+      <div class="stat"><small>Subjects</small><b>${subjects.length}</b></div>
+      <div class="stat"><small>Total current marks</small><b>${fmt(current)} / ${max}</b></div>
+      <div class="stat"><small>Overall percentage</small><b>${pct}%</b></div>
+      <div class="stat"><small>Total target</small><b>${fmt(target)} / ${max}</b></div>
+      <div class="stat"><small>Subjects passed</small><b>${subjects.filter(s=>s.current>=passMark(s.max)).length} / ${subjects.length}</b></div>
+      <div class="stat"><small>Targets reached</small><b>${subjects.filter(s=>s.current>=s.target).length} / ${subjects.length}</b></div>
+    </div><div class="progress"><div class="bar" style="width:${pct}%"></div></div>`:
+    '<div class="empty">Add subjects to see your overall progress.</div>';
+}
+const dateInput=document.getElementById('examDate');
+try{dateInput.value=localStorage.getItem('improvementExamDate')||''}catch(e){}
+dateInput.addEventListener('change',()=>{try{localStorage.setItem('improvementExamDate',dateInput.value)}catch(e){}updateTimer()});
+function updateTimer(){
+  const timer=document.getElementById('timer'),label=document.getElementById('timerLabel');
+  if(!dateInput.value){timer.textContent='—';label.textContent='Choose a date to start the countdown.';return}
+  const target=new Date(dateInput.value+'T00:00:00'),now=new Date();
+  const today=new Date(now.getFullYear(),now.getMonth(),now.getDate());
+  const days=Math.round((target-today)/86400000);
+  if(days>0){timer.textContent=days;label.textContent=days===1?'day remaining':'days remaining'}
+  else if(days===0){timer.textContent='TODAY';label.textContent='Your exam is today. All the best!'}
+  else{timer.textContent='Finished';label.textContent='This exam date has passed.'}
+}
+updateMarkLimits();updateTimer();render();
+</script>
+</body>
+</html>
